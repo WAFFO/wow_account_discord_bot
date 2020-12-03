@@ -81,6 +81,9 @@ This link will only work for ten minutes. Do *not* share this link.",
                 if let Some(account) = self.get_account_id_str(cap.as_str()).await? {
                     result = format!("<@{}> account id is: {}", cap, account);
                 }
+                else {
+                    result = format!("<@{}> does not have an account.", cap);
+                }
             }
             else {
                 println!("Could not parse: {}", cap);
