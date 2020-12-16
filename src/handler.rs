@@ -1,20 +1,20 @@
+use mysql_async::Pool;
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
-use serenity::model::id::{GuildId, ChannelId};
+use serenity::model::id::{ChannelId, GuildId};
 use serenity::model::user::User;
 
-use crate::account_bot::AccountBot;
-use mysql_async::Pool;
+use crate::manage;
 
 pub struct Handler {
-    pub(crate) bot: AccountBot,
-    pub(crate) db_pool: Pool,
+    pub(crate) db_pool:              Pool,
     pub(crate) account_channel: ChannelId,
     pub(crate) leavers_channel: ChannelId,
     pub(crate) whois_channel:   ChannelId,
+    pub(crate) site_url:           String,
 }
 
 #[async_trait]
@@ -23,7 +23,7 @@ impl EventHandler for Handler {
         let db_res = self.db_pool.get_conn().await;
         let err_msg = "Error sending leaver message.";
         if let Ok(mut db) = db_res {
-            let account = self.bot.get_account_id(&mut db, user.id).await;
+            let account = manage::get_account_id(&mut db, user.id).await;
 
             if let Ok(account_id) = account {
                 if let Some(id) = account_id {
@@ -62,9 +62,9 @@ impl EventHandler for Handler {
         if let Ok(mut db) = db_res {
             if let Err(_) =
             if msg.channel_id == self.account_channel {
-                self.bot.manage_account(&mut db, ctx, msg).await
+                manage::manage_account(&mut db, ctx, msg, &self.site_url).await
             } else if msg.channel_id == self.whois_channel {
-                self.bot.whois(&mut db, ctx, msg).await
+                manage::whois(&mut db, ctx, msg).await
             } else {
                 Ok(())
             }
