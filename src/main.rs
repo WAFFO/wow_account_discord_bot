@@ -25,15 +25,17 @@ async fn main() {
     let pool = mysql_async::Pool::new(db_access.as_str());
 
     let account_bot = AccountBot{
-        account_channel: ChannelId(account_bot_channel),
-        leavers_channel: ChannelId(leavers_channel),
-        whois_channel: ChannelId(whois_channel),
         site_url: account_url,
-        db_pool: pool,
     };
 
     let mut client = Client::new(&discord_token)
-        .event_handler(Handler{ bot: account_bot })
+        .event_handler(Handler{
+            bot: account_bot,
+            db_pool: pool,
+            account_channel: ChannelId(account_bot_channel),
+            leavers_channel: ChannelId(leavers_channel),
+            whois_channel: ChannelId(whois_channel),
+        })
         .await
         .expect("Err creating client");
 
