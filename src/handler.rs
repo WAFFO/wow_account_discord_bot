@@ -58,6 +58,9 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
+        if msg.author.bot {
+            return;
+        }
         let db_res = self.db_pool.get_conn().await;
         if let Ok(mut db) = db_res {
             if let Err(_) =
