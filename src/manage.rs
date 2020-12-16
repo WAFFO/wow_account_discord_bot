@@ -109,8 +109,8 @@ pub async fn get_account_id_str(db: &mut Conn, user: &str) -> Result<Option<Stri
     Ok(result)
 }
 
-pub async fn get_user_from_character(db: &mut Conn, character_name: &str) -> Result<Option<u32>, mysql_async::Error> {
-    let result: Option<u32> = db.query_first(
+pub async fn get_user_from_character(db: &mut Conn, character_name: &str) -> Result<Option<u64>, mysql_async::Error> {
+    let result: Option<u64> = db.query_first(
         format!(
             "select discord_id from bridge where account_id = (\
             select account from acore_characters.characters where LOWER(name)='{}')",
