@@ -1,4 +1,3 @@
-use mysql_async::Pool;
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
@@ -8,13 +7,14 @@ use serenity::model::id::{ChannelId, GuildId};
 use serenity::model::user::User;
 
 use crate::manage;
+use mysql_async::Pool;
 
 pub struct Handler {
-    pub(crate) db_pool:              Pool,
+    pub(crate) db_pool: Pool,
     pub(crate) account_channel: ChannelId,
     pub(crate) leavers_channel: ChannelId,
-    pub(crate) whois_channel:   ChannelId,
-    pub(crate) site_url:           String,
+    pub(crate) whois_channel: ChannelId,
+    pub(crate) site_url: String,
 }
 
 #[async_trait]
@@ -48,8 +48,7 @@ impl EventHandler for Handler {
             if let Err(_) = db.disconnect().await {
                 println!("db disconnect error");
             }
-        }
-        else {
+        } else {
             self.leavers_channel.say(ctx, format!(
                 "<@{}> left, but I cannot connect to the database.",
                 user.id.0,
@@ -78,8 +77,7 @@ impl EventHandler for Handler {
             if let Err(_) = db.disconnect().await {
                 println!("db disconnect error");
             }
-        }
-        else {
+        } else {
             println!("DB DOWN!");
         }
     }

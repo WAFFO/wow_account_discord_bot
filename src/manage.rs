@@ -4,11 +4,12 @@ use serenity::client::Context;
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
 use mysql_async::Conn;
+use crate::tables::Character;
 
 #[allow(dead_code)]
 pub async fn get_token(db: &mut Conn, user_id: &UserId) -> Result<String, mysql_async::Error> {
     // clear old tokens
-    let _ : Vec<bool> = db.query("call expire_access()").await?;
+    let _: Vec<bool> = db.query("call expire_access()").await?;
     // check if token exists
     let result: Option<String> = db.query_first(
         format!("select token from access where discord_id={}", user_id.0)
@@ -16,8 +17,7 @@ pub async fn get_token(db: &mut Conn, user_id: &UserId) -> Result<String, mysql_
     // if exists
     if let Some(token) = result {
         Ok(token)
-    }
-    else {
+    } else {
         // get new token
         let token = generate_token();
         // insert into database
@@ -25,15 +25,17 @@ pub async fn get_token(db: &mut Conn, user_id: &UserId) -> Result<String, mysql_
             "discord_id" => user_id.0,
             "token" => token.clone(),
         };
-        let _ : Vec<bool> = db.exec(
+        let _: Vec<bool> = db.exec(
             "insert into access (discord_id, token) values (:discord_id, :token)",
-            params
+            params,
         ).await?;
         Ok(token)
     }
 }
 
-pub async fn manage_account(db: &mut Conn, ctx: Context, msg: Message, site_url: &String) -> Result<(), mysql_async::Error> {
+pub async fn manage_account(
+    db: &mut Conn, ctx: Context, msg: Message, site_url: &String,
+) -> Result<(), mysql_async::Error> {
     let user_id = msg.author.id;
     let token = get_token(db, &user_id).await?;
     if let Err(why) = msg.author.direct_message(&ctx, |m| {
@@ -67,21 +69,17 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
         if let Ok(_) = cap.parse::<u64>() {
             if let Some(account) = get_account_id_str(db, cap.as_str()).await? {
                 result = format!("<@{}> account id is: {}", cap, account);
-            }
-            else {
+            } else {
                 result = format!("<@{}> does not have an account.", cap);
             }
-        }
-        else {
+        } else {
             println!("Could not parse: {}", cap);
         }
-    }
-    else {
+    } else {
         // lookup by character name
         if let Some(id) = get_user_from_character(db, &msg.content).await? {
             result = format!("{} belongs to <@{}>", msg.content, id);
-        }
-        else {
+        } else {
             result = format!("No character called \"{}\"", msg.content);
         }
     }
@@ -93,7 +91,9 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
     Ok(())
 }
 
-pub async fn get_account_id(db: &mut Conn, user: UserId) -> Result<Option<String>, mysql_async::Error> {
+pub async fn get_account_id(
+    db: &mut Conn, user: UserId,
+) -> Result<Option<String>, mysql_async::Error> {
     let result: Option<String> = db.query_first(
         format!("select account_id from bridge where discord_id={}", user.0)
     ).await?;
@@ -101,7 +101,9 @@ pub async fn get_account_id(db: &mut Conn, user: UserId) -> Result<Option<String
     Ok(result)
 }
 
-pub async fn get_account_id_str(db: &mut Conn, user: &str) -> Result<Option<String>, mysql_async::Error> {
+pub async fn get_account_id_str(
+    db: &mut Conn, user: &str,
+) -> Result<Option<String>, mysql_async::Error> {
     let result: Option<String> = db.query_first(
         format!("select account_id from bridge where discord_id={}", user)
     ).await?;
@@ -109,16 +111,41 @@ pub async fn get_account_id_str(db: &mut Conn, user: &str) -> Result<Option<Stri
     Ok(result)
 }
 
-pub async fn get_user_from_character(db: &mut Conn, character_name: &str) -> Result<Option<u64>, mysql_async::Error> {
-    let result: Option<u64> = db.query_first(
-        format!(
-            "select discord_id from bridge where account_id = (\
-            select account from acore_characters.characters where LOWER(name)='{}')",
-            character_name.to_lowercase(),
-        )
+pub async fn get_user_from_character(
+    db: &mut Conn, character_name: &str,
+) -> Result<Option<u64>, mysql_async::Error> {
+    let params = params!(
+        "name" => character_name.to_lowercase(),
+    );
+    let result: Option<u64> = db.exec_first(
+        "select discord_id from bridge where account_id = (\
+        select account from acore_characters.characters where LOWER(name)=:name)",
+        params,
     ).await?;
 
     Ok(result)
+}
+
+pub async fn get_characters_from_discord_id(
+    db: &mut Conn, discord_id: &str,
+) -> Result<Vec<Character>, mysql_async::Error> {
+    let results = db.query_map(
+        format!(
+            "select account, name, race, class, level, map \
+            from acore_characters.characters where account=\
+            (select account_id from bridge where discord_id={})",
+            discord_id,
+        ),
+        |(account, name, race, class, level, map)| Character {
+            account,
+            name,
+            race,
+            class,
+            level,
+            map,
+        },
+    ).await?;
+    Ok(results)
 }
 
 fn generate_token() -> String {
