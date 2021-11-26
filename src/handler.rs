@@ -1,10 +1,10 @@
+use serenity::model::id::{ChannelId, GuildId};
+use serenity::model::user::User;
 use serenity::{
     async_trait,
     model::{channel::Message, gateway::Ready},
     prelude::*,
 };
-use serenity::model::id::{ChannelId, GuildId};
-use serenity::model::user::User;
 
 use crate::manage;
 use mysql_async::Pool;
@@ -27,32 +27,49 @@ impl EventHandler for Handler {
 
             if let Ok(account_id) = account {
                 if let Some(id) = account_id {
-                    self.leavers_channel.say(ctx, format!(
-                        "<@{}> left, their account id is: {}",
-                        user.id.0,
-                        id,
-                    )).await.expect(err_msg);
+                    self.leavers_channel
+                        .say(
+                            ctx,
+                            format!("<@{}> left, their account id is: {}", user.id.0, id,),
+                        )
+                        .await
+                        .expect(err_msg);
                 } else {
-                    self.leavers_channel.say(ctx, format!(
-                        "<@{}> left, they did not have an account.",
-                        user.id.0,
-                    )).await.expect(err_msg);
+                    self.leavers_channel
+                        .say(
+                            ctx,
+                            format!("<@{}> left, they did not have an account.", user.id.0,),
+                        )
+                        .await
+                        .expect(err_msg);
                 }
             } else {
-                self.leavers_channel.say(ctx, format!(
-                    "<@{}> left, but my connection to the database was interrupted.",
-                    user.id.0,
-                )).await.expect(err_msg);
+                self.leavers_channel
+                    .say(
+                        ctx,
+                        format!(
+                            "<@{}> left, but my connection to the database was interrupted.",
+                            user.id.0,
+                        ),
+                    )
+                    .await
+                    .expect(err_msg);
             }
 
             if let Err(_) = db.disconnect().await {
                 println!("db disconnect error");
             }
         } else {
-            self.leavers_channel.say(ctx, format!(
-                "<@{}> left, but I cannot connect to the database.",
-                user.id.0,
-            )).await.expect(err_msg);
+            self.leavers_channel
+                .say(
+                    ctx,
+                    format!(
+                        "<@{}> left, but I cannot connect to the database.",
+                        user.id.0,
+                    ),
+                )
+                .await
+                .expect(err_msg);
         }
     }
 
@@ -62,15 +79,13 @@ impl EventHandler for Handler {
         }
         let db_res = self.db_pool.get_conn().await;
         if let Ok(mut db) = db_res {
-            if let Err(_) =
-            if msg.channel_id == self.account_channel {
+            if let Err(_) = if msg.channel_id == self.account_channel {
                 manage::manage_account(&mut db, ctx, msg, &self.site_url).await
             } else if msg.channel_id == self.whois_channel {
                 manage::whois(&mut db, ctx, msg).await
             } else {
                 Ok(())
-            }
-            {
+            } {
                 println!("DB DOWN!");
             }
 
