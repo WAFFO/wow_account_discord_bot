@@ -69,7 +69,7 @@ This link will only work for ten minutes. Do *not* share this link.",
 }
 
 pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysql_async::Error> {
-    let mut result = String::from("");
+    let result;
     if msg.content.starts_with(r"<@") && msg.content.ends_with(r">") {
         // lookup by discord user id
         let cap = String::from(
@@ -86,7 +86,7 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
                 result = format!("<@{}> does not have an account.", cap);
             }
         } else {
-            println!("Could not parse: {}", cap);
+            result = format!("Could not parse: {}", cap);
         }
     } else {
         // lookup by character name

@@ -22,55 +22,33 @@ impl EventHandler for Handler {
     async fn guild_member_removal(&self, ctx: Context, _: GuildId, user: User) {
         let db_res = self.db_pool.get_conn().await;
         let err_msg = "Error sending leaver message.";
+        let result;
         if let Ok(mut db) = db_res {
             let account = manage::get_account_id(&mut db, user.id).await;
 
             if let Ok(account_id) = account {
                 if let Some(id) = account_id {
-                    self.leavers_channel
-                        .say(
-                            ctx,
-                            format!("<@{}> left, their account id is: {}", user.id.0, id,),
-                        )
-                        .await
-                        .expect(err_msg);
+                    result = format!("<@{}> left, their account id is: {}", user.id.0, id,);
                 } else {
-                    self.leavers_channel
-                        .say(
-                            ctx,
-                            format!("<@{}> left, they did not have an account.", user.id.0,),
-                        )
-                        .await
-                        .expect(err_msg);
+                    result = format!("<@{}> left, they did not have an account.", user.id.0,);
                 }
             } else {
-                self.leavers_channel
-                    .say(
-                        ctx,
-                        format!(
-                            "<@{}> left, but my connection to the database was interrupted.",
-                            user.id.0,
-                        ),
-                    )
-                    .await
-                    .expect(err_msg);
+                result = format!(
+                    "<@{}> left, but my connection to the database was interrupted.",
+                    user.id.0,
+                );
             }
 
             if let Err(_) = db.disconnect().await {
                 println!("db disconnect error");
             }
         } else {
-            self.leavers_channel
-                .say(
-                    ctx,
-                    format!(
-                        "<@{}> left, but I cannot connect to the database.",
-                        user.id.0,
-                    ),
-                )
-                .await
-                .expect(err_msg);
+            result = format!(
+                "<@{}> left, but I cannot connect to the database.",
+                user.id.0,
+            );
         }
+        self.leavers_channel.say(ctx, result).await.expect(err_msg);
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
