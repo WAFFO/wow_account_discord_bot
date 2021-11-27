@@ -152,22 +152,12 @@ pub async fn get_characters_from_discord_id(
     discord_id: &str,
 ) -> Result<Vec<Character>, mysql_async::Error> {
     let results = db
-        .query_map(
-            format!(
-                "select account, name, race, class, level, map \
+        .query(format!(
+            "select account, name, race, class, level, map \
             from acore_characters.characters where account=\
             (select account_id from bridge where discord_id={})",
-                discord_id,
-            ),
-            |(account, name, race, class, level, map)| Character {
-                account,
-                name,
-                race,
-                class,
-                level,
-                map,
-            },
-        )
+            discord_id,
+        ))
         .await?;
     Ok(results)
 }

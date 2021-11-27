@@ -33,3 +33,22 @@ pub struct Character {
     pub level: u8,
     pub map: u16,
 }
+
+impl FromRow for Character {
+    fn from_row_opt(row: Row) -> Result<Self, FromRowError> {
+        let account = row.get("account").expect("Got bad account type");
+        let name = row.get("name").expect("Got bad name type");
+        let race = row.get("race").expect("Got bad race type");
+        let class = row.get("class").expect("Got bad class type");
+        let level = row.get("level").expect("Got bad level type");
+        let map = row.get("map").expect("Got bad map type");
+        Ok(Character {
+            account,
+            name,
+            race,
+            class,
+            level,
+            map,
+        })
+    }
+}
