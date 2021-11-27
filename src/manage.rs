@@ -1,4 +1,4 @@
-use crate::tables::Character;
+use crate::tables::{Bridge, Character};
 use mysql_async::prelude::*;
 use mysql_async::Conn;
 use random_string::{Charset, RandomString};
@@ -90,8 +90,11 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
         }
     } else {
         // lookup by character name
-        if let Some(id) = get_user_from_character(db, &msg.content).await? {
-            result = format!("{} belongs to <@{}>", msg.content, id);
+        if let Some(bridge) = get_bridge_from_character(db, &msg.content).await? {
+            result = format!(
+                "{} belongs to <@{}> with account id {}",
+                msg.content, bridge.discord_id, bridge.account_id
+            );
         } else {
             result = format!("No character called \"{}\"", msg.content);
         }
@@ -132,22 +135,16 @@ pub async fn get_account_id_str(
     Ok(result)
 }
 
-pub async fn get_user_from_character(
+pub async fn get_bridge_from_character(
     db: &mut Conn,
     character_name: &str,
-) -> Result<Option<u64>, mysql_async::Error> {
-    let params = params!(
-        "name" => character_name.to_lowercase(),
-    );
-    let result: Option<u64> = db
-        .exec_first(
-            "select discord_id from bridge where account_id = (\
-        select account from acore_characters.characters where LOWER(name)=:name)",
-            params,
-        )
-        .await?;
-
-    Ok(result)
+) -> Result<Option<Bridge>, mysql_async::Error> {
+    Ok(db
+        .query_first(format!(
+            "select account from acore_characters.characters where LOWER(name)-{}",
+            character_name,
+        ))
+        .await?)
 }
 
 pub async fn get_characters_from_discord_id(
