@@ -57,14 +57,14 @@ impl EventHandler for Handler {
         }
         let db_res = self.db_pool.get_conn().await;
         if let Ok(mut db) = db_res {
-            if let Err(_) = if msg.channel_id == self.account_channel {
+            if let Err(why) = if msg.channel_id == self.account_channel {
                 manage::manage_account(&mut db, ctx, msg, &self.site_url).await
             } else if msg.channel_id == self.whois_channel {
                 manage::whois(&mut db, ctx, msg).await
             } else {
                 Ok(())
             } {
-                println!("DB DOWN!");
+                println!("ERROR: {}", why);
             }
 
             if let Err(_) = db.disconnect().await {
