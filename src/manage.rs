@@ -81,9 +81,9 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
                 .trim_end_matches(">"),
         );
 
-        if let Ok(_) = cap.parse::<u64>() {
-            if let Some(account) = get_account_id_str(db, cap.as_str()).await? {
-                let characters = get_characters_from_account_id(db, account.as_str()).await?;
+        if let Ok(discord_id) = cap.parse::<u64>() {
+            if let Some(account) = get_account_id(db, UserId(discord_id)).await? {
+                let characters = get_characters_from_account_id(db, account).await?;
                 if characters.len() == 0 {
                     result = format!("<@{}> has no characters, account id is: {}", cap, account);
                 } else {
@@ -117,28 +117,11 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
 pub async fn get_account_id(
     db: &mut Conn,
     user: UserId,
-) -> Result<Option<String>, mysql_async::Error> {
+) -> Result<Option<u32>, mysql_async::Error> {
     let params = params!(
         "discord_id" => user.0,
     );
-    let result: Option<String> = db
-        .exec_first(
-            "select account_id from bridge where discord_id=:discord_id",
-            params,
-        )
-        .await?;
-
-    Ok(result)
-}
-
-pub async fn get_account_id_str(
-    db: &mut Conn,
-    user: &str,
-) -> Result<Option<String>, mysql_async::Error> {
-    let params = params!(
-        "discord_id" => user,
-    );
-    let result: Option<String> = db
+    let result: Option<u32> = db
         .exec_first(
             "select account_id from bridge where discord_id=:discord_id",
             params,
@@ -166,7 +149,7 @@ pub async fn get_bridge_from_character(
 
 pub async fn get_characters_from_account_id(
     db: &mut Conn,
-    account_id: &str,
+    account_id: u32,
 ) -> Result<Vec<Character>, mysql_async::Error> {
     let params = params!(
         "account_id" => account_id,
