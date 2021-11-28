@@ -148,7 +148,7 @@ pub async fn get_bridge_from_character(
 ) -> Result<Option<Bridge>, mysql_async::Error> {
     Ok(db
         .query_first(format!(
-            "select account from acore_characters.characters where LOWER(name)={}",
+            "select account from acore_characters.characters where LOWER(name)='{}'",
             character_name.to_lowercase(),
         ))
         .await?)
