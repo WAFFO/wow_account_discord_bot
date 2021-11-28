@@ -118,11 +118,14 @@ pub async fn get_account_id(
     db: &mut Conn,
     user: UserId,
 ) -> Result<Option<String>, mysql_async::Error> {
+    let params = params!(
+        "discord_id" => user.0,
+    );
     let result: Option<String> = db
-        .query_first(format!(
-            "select account_id from bridge where discord_id={}",
-            user.0
-        ))
+        .exec_first(
+            "select account_id from bridge where discord_id=:discord_id",
+            params,
+        )
         .await?;
 
     Ok(result)
@@ -132,11 +135,14 @@ pub async fn get_account_id_str(
     db: &mut Conn,
     user: &str,
 ) -> Result<Option<String>, mysql_async::Error> {
+    let params = params!(
+        "discord_id" => user,
+    );
     let result: Option<String> = db
-        .query_first(format!(
-            "select account_id from bridge where discord_id={}",
-            user
-        ))
+        .exec_first(
+            "select account_id from bridge where discord_id=:discord_id",
+            params,
+        )
         .await?;
 
     Ok(result)
@@ -146,11 +152,15 @@ pub async fn get_bridge_from_character(
     db: &mut Conn,
     character_name: &str,
 ) -> Result<Option<Bridge>, mysql_async::Error> {
+    let params = params!(
+        "name" => character_name.to_lowercase(),
+    );
     Ok(db
-        .query_first(format!(
-            "select account from acore_characters.characters where LOWER(name)='{}'",
-            character_name.to_lowercase(),
-        ))
+        .exec_first(
+            "select account_id, discord_id from bridge where account_id = (\
+                select account from acore_characters.characters where LOWER(name)=:name)",
+            params,
+        )
         .await?)
 }
 
@@ -158,12 +168,15 @@ pub async fn get_characters_from_account_id(
     db: &mut Conn,
     account_id: &str,
 ) -> Result<Vec<Character>, mysql_async::Error> {
+    let params = params!(
+        "account_id" => account_id,
+    );
     let results = db
-        .query(format!(
+        .exec(
             "select account, name, race, class, level, map \
-            from acore_characters.characters where account={}",
-            account_id,
-        ))
+            from acore_characters.characters where account=:account_id",
+            params,
+        )
         .await?;
     Ok(results)
 }
