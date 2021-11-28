@@ -87,7 +87,7 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
                 if characters.len() == 0 {
                     result = format!("<@{}> has no characters, account id is: {}", cap, account);
                 } else {
-                    result = pretty_print_characters(characters);
+                    result = format!("```\n{}\n```", pretty_print_characters(characters));
                 }
             } else {
                 result = format!("<@{}> does not have an account.", cap);
