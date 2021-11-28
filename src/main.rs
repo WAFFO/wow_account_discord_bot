@@ -9,6 +9,7 @@ use tokio::signal;
 mod handler;
 mod manage;
 mod tables;
+mod wow;
 
 #[tokio::main]
 async fn main() {

@@ -11,3 +11,4 @@ tokio = { version = "0.2", features = ["macros", "signal"] }
 serenity = { default-features = false, features = ["client", "gateway", "model", "rustls_backend"], version = "0.9.0-rc.2"}
 mysql_async = "0.25.0"
 random-string = "0.1.1"
+prettytable-rs = "0.8.0"

@@ -1,6 +1,8 @@
 use crate::tables::{Bridge, Character};
+use crate::wow;
 use mysql_async::prelude::*;
 use mysql_async::Conn;
+use prettytable::{cell, row, Table};
 use random_string::{Charset, RandomString};
 use serenity::client::Context;
 use serenity::model::channel::Message;
@@ -81,7 +83,12 @@ pub async fn whois(db: &mut Conn, ctx: Context, msg: Message) -> Result<(), mysq
 
         if let Ok(_) = cap.parse::<u64>() {
             if let Some(account) = get_account_id_str(db, cap.as_str()).await? {
-                result = format!("<@{}> account id is: {}", cap, account);
+                let characters = get_characters_from_account_id(db, account.as_str()).await?;
+                if characters.len() == 0 {
+                    result = format!("<@{}> has no characters, account id is: {}", cap, account);
+                } else {
+                    result = pretty_print_characters(characters);
+                }
             } else {
                 result = format!("<@{}> does not have an account.", cap);
             }
@@ -147,16 +154,15 @@ pub async fn get_bridge_from_character(
         .await?)
 }
 
-pub async fn get_characters_from_discord_id(
+pub async fn get_characters_from_account_id(
     db: &mut Conn,
-    discord_id: &str,
+    account_id: &str,
 ) -> Result<Vec<Character>, mysql_async::Error> {
     let results = db
         .query(format!(
             "select account, name, race, class, level, map \
-            from acore_characters.characters where account=\
-            (select account_id from bridge where discord_id={})",
-            discord_id,
+            from acore_characters.characters where account={}",
+            account_id,
         ))
         .await?;
     Ok(results)
@@ -169,4 +175,23 @@ fn generate_token() -> String {
         Ok(string) => string,
         Err(_) => String::from("aaaaaaaaaaa"),
     }
+}
+
+fn pretty_print_characters(characters: Vec<Character>) -> String {
+    let mut table = Table::new();
+    table.add_row(row!["Account", "Name", "Level", "Race"]);
+    for c in characters {
+        table.add_row(row![
+            c.account.to_string(),
+            c.name,
+            c.level.to_string(),
+            wow::race_int_to_str(c.race),
+        ]);
+    }
+
+    let mut v = Vec::new();
+    if let Err(why) = table.print(&mut v) {
+        return format!("Bad print: {}", why);
+    }
+    String::from_utf8(v).expect("Panic trying to convert table write to String")
 }
