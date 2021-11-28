@@ -14,3 +14,21 @@ pub fn race_int_to_str(race_id: u8) -> &'static str {
     _ => "bad id: {}",
   }
 }
+
+pub fn class_int_to_str(class_id: u8) -> &'static str {
+  match class_id {
+    1 => "Warrior",
+    2 => "Paladin",
+    3 => "Hunter",
+    4 => "Rogue",
+    5 => "Priest",
+    6 => "Death Knight",
+    7 => "Shaman",
+    8 => "Mage",
+    9 => "Warlock",
+    10 => "Monk",
+    11 => "Druid",
+    12 => "Demon Hunter",
+    _ => "bad id: {}",
+  }
+}

@@ -179,13 +179,14 @@ fn generate_token() -> String {
 
 fn pretty_print_characters(characters: Vec<Character>) -> String {
     let mut table = Table::new();
-    table.add_row(row!["Account", "Name", "Level", "Race"]);
+    table.add_row(row!["Account", "Name", "Level", "Race", "Class"]);
     for c in characters {
         table.add_row(row![
             c.account.to_string(),
             c.name,
             c.level.to_string(),
             wow::race_int_to_str(c.race),
+            wow::class_int_to_str(c.class),
         ]);
     }
 
